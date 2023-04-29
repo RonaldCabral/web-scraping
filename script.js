@@ -5,14 +5,14 @@ async function scraper (url) {
     
     //Configuring the connection to the database
     const connection = mysql.createConnection({
-      host: process.env.DATABASE_HOST,
-      user: process.env.DATABASE_USERNAME,
-      password: process.env.DATABASE_PASSWORD,
-      database: process.env.DATABASE_NAME,
+      host: '',
+      user: '',
+      password: '',
+      database: '',
     });
     
     //Function to insert data into the database
-    function insertData(content) {
+    function insertDataContent(content) {
       const query = `INSERT INTO data (content) VALUES ('${content}')`;
       connection.query(query, (error, results, fields) => {
         if (error) {
@@ -33,12 +33,11 @@ async function scraper (url) {
       await page.goto(url);
     
       //Get the data
-      const content = await page.evaluate(() => Array.from(document.querySelectorAll('p')).map(Element => Element.textContent));
+     const content = await page.evaluate(() => Array.from(document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li')).map(Element => Element.textContent));
       
-    
       //insert the data into the database
       for (let i = 0; i < content.length; i++) {
-        insertData(content[i]);
+        insertDataContent(content[i]);
       }
     
       // Close th instance 
