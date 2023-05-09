@@ -1,64 +1,67 @@
-const puppeteer = require('puppeteer');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const sanitizeHtml = require('sanitize-html');
 const mysql = require('mysql');
 
-// Set up MySQL connection
-const connection = mysql.createConnection({
-  host: '',
-  user: '',
-  password: '',
-  database: ''
-});
+// Configuración de la base de datos
+const dbConfig = {
+  host: 'localhost',
+  user: 'root',
+  password: 'ronaldr4',
+  database: 'test'
+};
 
-// Connect to MySQL
-connection.connect(function(err) {
-  if (err) throw err;
-  console.log('Connected to MySQL database');
-});
+// Función para guardar los datos en la base de datos
+function saveDataToDatabase(title, content) {
+  const connection = mysql.createConnection(dbConfig);
+  connection.connect();
 
-// Function to insert data into MySQL
-function insertData(title, content) {
-  const sql = 'INSERT INTO data (title, content) VALUES (?, ?)';
+  const query = 'INSERT INTO data (title, content) VALUES (?, ?)';
   const values = [title, content];
-  connection.query(sql, values, function(err, result) {
-    if (err) throw err;
-    console.log('Data inserted successfully');
+
+  connection.query(query, values, (error, results, fields) => {
+    if (error) {
+      console.error('Error saving data to database:', error);
+    } else {
+      console.log('Data saved to database');
+    }
   });
+
+  connection.end();
 }
 
-// Function to extract data from webpage
-async function extractData(url) {
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  await page.goto(url);
+// Función para hacer web scraping de una página
+async function scrapePage(url) {
+  try {
+    const response = await axios.get(url);
+    const $ = cheerio.load(response.data);
+    const title = $('title').text();
+    const sanitizedContent = sanitizeHtml($('body').html(), {
+      allowedTags: [],
+      allowedAttributes: {}
+    });
+    const content = cheerio.load(sanitizedContent).text();
 
-  // Get all divs on the page
-  const divs = await page.$$('div');
-
-  for (const div of divs) {
-    // Check if div has a title
-    const title = await page.evaluate(() => Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6')).map(Element => Element.textContent));
-
-    // Get all paragraphs in the div
-    const paragraphs = await div.$$('p');
-    let content = '';
-
-    // Combine all paragraphs into a single string
-    for (const paragraph of paragraphs) {
-      const text = await paragraph.evaluate(element => element.textContent.trim());
-      content += text + ' ';
-    }
-
-    // If no title, save paragraphs as title
-    if (!title) {
-      title = content.substring(0, 50) + '...';
-    }
-
-    // Insert data into MySQL
-    insertData(title, content);
+    saveDataToDatabase(title, content);
+  } catch (error) {
+    console.error('Error scraping page:', error);
   }
-
-  await browser.close();
 }
 
-// Example usage
-extractData('');
+// Función para procesar el sitemap y extraer las URLs
+async function processSitemap(url) {
+  try {
+    const response = await axios.get(url);
+    const $ = cheerio.load(response.data);
+    const sitemapUrls = $('urlset url loc').map((i, el) => $(el).text()).get();
+
+    for (const pageUrl of sitemapUrls) {
+      await scrapePage(pageUrl);
+    }
+  } catch (error) {
+    console.error('Error getting URLs from Sitemap:', error);
+  }
+}
+
+// Procesar el sitemap principal
+processSitemap('https://openai.com/sitemap.xml');
