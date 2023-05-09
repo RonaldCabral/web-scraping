@@ -3,7 +3,7 @@ const cheerio = require('cheerio');
 const sanitizeHtml = require('sanitize-html');
 const mysql = require('mysql');
 
-// Configuración de la base de datos
+// Database configuration
 const dbConfig = {
   host: 'localhost',
   user: 'root',
@@ -11,7 +11,7 @@ const dbConfig = {
   database: 'test'
 };
 
-// Función para guardar los datos en la base de datos
+// Function to save the data in the database
 function saveDataToDatabase(title, content) {
   const connection = mysql.createConnection(dbConfig);
   connection.connect();
@@ -30,7 +30,7 @@ function saveDataToDatabase(title, content) {
   connection.end();
 }
 
-// Función para hacer web scraping de una página
+// Function to do web scraping of a page
 async function scrapePage(url) {
   try {
     const response = await axios.get(url);
@@ -48,7 +48,7 @@ async function scrapePage(url) {
   }
 }
 
-// Función para procesar el sitemap y extraer las URLs
+// Function to process the sitemap and extract the URLs
 async function processSitemap(url) {
   try {
     const response = await axios.get(url);
@@ -63,5 +63,5 @@ async function processSitemap(url) {
   }
 }
 
-// Procesar el sitemap principal
-processSitemap('https://openai.com/sitemap.xml');
+// Process the main sitemap
+processSitemap('  ');
