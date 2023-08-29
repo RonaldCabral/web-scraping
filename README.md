@@ -1,1 +1,1 @@
-A simple web scraping app with javascript using puppeteer
+A simple web scraping app with javascript using Axios and Cheerios
